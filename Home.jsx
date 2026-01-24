@@ -1,18 +1,17 @@
-import React from 'react';
-import { Play, Music, Shuffle, Waves } from 'lucide-react';
+import { Play, Music, Shuffle, Waves, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const GAMES = [
     {
         id: 1,
-        title: "Random Start",
-        desc: "New random starting note every level.",
+        title: "Basic Mode",
+        desc: "",
         icon: <Shuffle size={24} />,
         color: "linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)"
     },
     {
         id: 2,
-        title: "Consecutive",
+        title: "Consecutive Mode",
         desc: "Each note becomes the next reference.",
         icon: <Waves size={24} />,
         color: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)"
@@ -23,11 +22,18 @@ const GAMES = [
         desc: "A constant reference tone plays non-stop.",
         icon: <Music size={24} />,
         color: "linear-gradient(135deg, #ec4899 0%, #d946ef 100%)"
+    },
+    {
+        id: 4,
+        title: "Cadence Mode",
+        desc: "6-7-1 sequence, last note is too sharp/flat.",
+        icon: <Activity size={24} />,
+        color: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
     }
 ];
 
-export default function Home({ onStartGame1, onStartGame2, onStartGame3 }) {
-    const handlers = [onStartGame1, onStartGame2, onStartGame3];
+export default function Home({ onStartGame1, onStartGame2, onStartGame3, onStartGame4 }) {
+    const handlers = [onStartGame1, onStartGame2, onStartGame3, onStartGame4];
 
     return (
         <motion.div

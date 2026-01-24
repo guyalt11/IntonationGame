@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Music, ArrowUp, ArrowDown, Heart, Trophy } from 'lucide-react';
 import { motion } from 'framer-motion';
+import GameHeader from './components/GameHeader';
+import PitchIndicator from './components/PitchIndicator';
+import AnswerButtons from './components/AnswerButtons';
+import GameOver from './components/GameOver';
 
 const MIN_FREQ = 130.81;   // C3
-const MAX_FREQ = 1046.50;  // C6
+const MAX_FREQ = 240.50;  // C6
 
 // Difficulty model (logarithmic)
 const DELTA_SEMITONES_START = 4;
 const DELTA_SEMITONES_MIN = 0.1;
 const K_FACTOR = 0.2;
 
-export default function Game({ onExit }) {
+export default function Game2({ onExit }) {
     const [gameState, setGameState] = useState('playing');
     const [level, setLevel] = useState(1);
     const [lives, setLives] = useState(3);
@@ -50,11 +53,11 @@ export default function Game({ onExit }) {
             setTimeout(resolve, duration * 1000);
         });
 
-    const generateNextLevel = (targetLevel, currentFirst = null) => {
+    const generateNextLevel = (targetLevel) => {
         const safeMin = MIN_FREQ * 1.1;
         const safeMax = MAX_FREQ / 1.1;
 
-        const f1 = currentFirst ?? (Math.random() * (safeMax - safeMin) + safeMin);
+        const f1 = Math.random() * (safeMax - safeMin) + safeMin;
 
         const deltaSemitones =
             DELTA_SEMITONES_START * Math.exp(-K_FACTOR * targetLevel) +
@@ -68,7 +71,7 @@ export default function Game({ onExit }) {
         else direction = Math.random() > 0.5 ? 'u' : 'd';
 
         const f2 = direction === 'u' ? f1 * ratio : f1 / ratio;
-
+        console.log("f1-", f1, "f2-", f2);
         setFirstFreq(f1);
         setSecondFreq(f2);
         setIsCorrect(null);
@@ -89,12 +92,8 @@ export default function Game({ onExit }) {
 
         setIsPlaying(true);
         setCanInput(false);
-
-        if (level === 1) {
-            await playPitch(firstFreq);
-            await new Promise(r => setTimeout(r, 400));
-        }
-
+        await playPitch(firstFreq);
+        await new Promise(r => setTimeout(r, 100));
         await playPitch(secondFreq);
 
         setIsPlaying(false);
@@ -115,7 +114,7 @@ export default function Game({ onExit }) {
             if (won) {
                 const next = level + 1;
                 setLevel(next);
-                generateNextLevel(next, secondFreq);
+                generateNextLevel(next);
             } else {
                 const remaining = lives - 1;
                 setLives(remaining);
@@ -124,7 +123,7 @@ export default function Game({ onExit }) {
                 } else {
                     const next = level + 1;
                     setLevel(next);
-                    generateNextLevel(next, secondFreq);
+                    generateNextLevel(next);
                 }
             }
         }, 800);
@@ -149,69 +148,32 @@ export default function Game({ onExit }) {
                     animate={{ opacity: 1 }}
                     key="playing"
                 >
-                    <div className="stats">
-                        <span><Trophy size={18} /> Lvl {level}</span>
-                        <span>
-                            <Heart size={18} fill={lives > 0 ? "#ef4444" : "transparent"} color="#ef4444" />
-                            {lives}
-                        </span>
-                    </div>
+                    <GameHeader
+                        level={level}
+                        lives={lives}
+                        onHome={onExit}
+                    />
 
-                    <div>
-                        <div className={`pitch-indicator ${isPlaying ? 'playing' : ''}`}>
-                            <Music size={32} color={isPlaying ? "#fff" : "rgba(255,255,255,0.3)"} />
-                        </div>
-                        <div className="feedback">
-                            {isCorrect === true && <span className="correct">Correct!</span>}
-                            {isCorrect === false && <span className="wrong">Wrong!</span>}
-                        </div>
-                    </div>
+                    <PitchIndicator
+                        isPlaying={isPlaying}
+                        isCorrect={isCorrect}
+                    />
 
-                    <div className="controls">
-                        <button
-                            className={`secondary ${lastGuess === 'u' ? (isCorrect ? 'correct' : 'wrong') : ''}`}
-                            onClick={() => handleGuess('u')}
-                            disabled={!canInput}
-                        >
-                            <ArrowUp size={32} />
-                            Higher
-                        </button>
-                        <button
-                            className={`secondary ${lastGuess === 'd' ? (isCorrect ? 'correct' : 'wrong') : ''}`}
-                            onClick={() => handleGuess('d')}
-                            disabled={!canInput}
-                        >
-                            <ArrowDown size={32} />
-                            Lower
-                        </button>
-                    </div>
+                    <AnswerButtons
+                        onGuess={handleGuess}
+                        disabled={!canInput}
+                        lastGuess={lastGuess}
+                        isCorrect={isCorrect}
+                    />
                 </motion.div>
             )}
 
             {gameState === 'gameover' && (
-                <motion.div
-                    className="game-over-screen"
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    key="gameover"
-                >
-                    <div>
-                        <h1 style={{ color: '#ef4444', background: 'none', WebkitTextFillColor: '#ef4444' }}>
-                            Game Over
-                        </h1>
-                        <p style={{ fontSize: '1.5rem', marginTop: '1rem' }}>
-                            Score: Level {level}
-                        </p>
-                    </div>
-                    <button className="primary" onClick={startGame}>
-                        Try Again
-                    </button>
-                    {onExit && (
-                        <button className="secondary" onClick={onExit} style={{ marginTop: '1rem' }}>
-                            Back to Home
-                        </button>
-                    )}
-                </motion.div>
+                <GameOver
+                    level={level}
+                    onRestart={startGame}
+                    onExit={onExit}
+                />
             )}
         </>
     );

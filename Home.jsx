@@ -1,8 +1,7 @@
-import React from 'react';
 import { Play } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export default function Home({ onStartGame }) {
+export default function Home({ onStartGame1, onStartGame2 }) {
     return (
         <motion.div
             className="start-screen"
@@ -17,9 +16,13 @@ export default function Home({ onStartGame }) {
                 </p>
             </div>
 
-            <button className="primary" onClick={onStartGame}>
+            <button className="primary" onClick={onStartGame1}>
                 <Play size={24} />
-                Start Training
+                Game 1
+            </button>
+            <button className="primary" onClick={onStartGame2}>
+                <Play size={24} />
+                Game 2
             </button>
         </motion.div>
     );

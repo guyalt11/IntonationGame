@@ -4,16 +4,17 @@ import GameHeader from './components/GameHeader';
 import PitchIndicator from './components/PitchIndicator';
 import AnswerButtons from './components/AnswerButtons';
 import GameOver from './components/GameOver';
+import { playPitch, initAudioContext } from './utils/audioUtils';
 
 const MIN_FREQ = 130.81;   // C3
-const MAX_FREQ = 240.50;  // C6
+const MAX_FREQ = 1046.50;  // C6
 
 // Difficulty model (logarithmic)
 const DELTA_SEMITONES_START = 4;
 const DELTA_SEMITONES_MIN = 0.1;
 const K_FACTOR = 0.2;
 
-export default function Game2({ onExit }) {
+export default function Game1({ onExit }) {
     const [gameState, setGameState] = useState('playing');
     const [level, setLevel] = useState(1);
     const [lives, setLives] = useState(3);
@@ -28,36 +29,18 @@ export default function Game2({ onExit }) {
 
     const initAudio = () => {
         if (!audioContext.current) {
-            audioContext.current = new (window.AudioContext || window.webkitAudioContext)();
+            audioContext.current = initAudioContext();
         }
     };
 
-    const playPitch = (freq, duration = 0.8) =>
-        new Promise(resolve => {
-            const osc = audioContext.current.createOscillator();
-            const gain = audioContext.current.createGain();
+    const handlePlayPitch = (freq, duration = 0.8) =>
+        playPitch(audioContext.current, freq, duration);
 
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(freq, audioContext.current.currentTime);
-
-            gain.gain.setValueAtTime(0, audioContext.current.currentTime);
-            gain.gain.linearRampToValueAtTime(0.3, audioContext.current.currentTime + 0.1);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.current.currentTime + duration);
-
-            osc.connect(gain);
-            gain.connect(audioContext.current.destination);
-
-            osc.start();
-            osc.stop(audioContext.current.currentTime + duration);
-
-            setTimeout(resolve, duration * 1000);
-        });
-
-    const generateNextLevel = (targetLevel) => {
+    const generateNextLevel = (targetLevel, currentFirst = null) => {
         const safeMin = MIN_FREQ * 1.1;
         const safeMax = MAX_FREQ / 1.1;
 
-        const f1 = Math.random() * (safeMax - safeMin) + safeMin;
+        const f1 = currentFirst ?? (Math.random() * (safeMax - safeMin) + safeMin);
 
         const deltaSemitones =
             DELTA_SEMITONES_START * Math.exp(-K_FACTOR * targetLevel) +
@@ -71,7 +54,7 @@ export default function Game2({ onExit }) {
         else direction = Math.random() > 0.5 ? 'u' : 'd';
 
         const f2 = direction === 'u' ? f1 * ratio : f1 / ratio;
-        console.log("f1-", f1, "f2-", f2);
+
         setFirstFreq(f1);
         setSecondFreq(f2);
         setIsCorrect(null);
@@ -92,9 +75,13 @@ export default function Game2({ onExit }) {
 
         setIsPlaying(true);
         setCanInput(false);
-        await playPitch(firstFreq);
-        await new Promise(r => setTimeout(r, 100));
-        await playPitch(secondFreq);
+
+        if (level === 1) {
+            await handlePlayPitch(firstFreq);
+            await new Promise(r => setTimeout(r, 400));
+        }
+
+        await handlePlayPitch(secondFreq);
 
         setIsPlaying(false);
         setCanInput(true);
@@ -114,7 +101,7 @@ export default function Game2({ onExit }) {
             if (won) {
                 const next = level + 1;
                 setLevel(next);
-                generateNextLevel(next);
+                generateNextLevel(next, secondFreq);
             } else {
                 const remaining = lives - 1;
                 setLives(remaining);
@@ -123,7 +110,7 @@ export default function Game2({ onExit }) {
                 } else {
                     const next = level + 1;
                     setLevel(next);
-                    generateNextLevel(next);
+                    generateNextLevel(next, secondFreq);
                 }
             }
         }, 800);

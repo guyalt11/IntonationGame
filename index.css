@@ -191,6 +191,7 @@ button.wrong {
     align-items: center;
     padding: 2rem 0;
 }
+
 .home-button {
     display: flex;
     align-items: center;
@@ -206,4 +207,8 @@ button.wrong {
 
 .home-button:hover {
     background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.mode-card-container {
+    width: 100%;
 }
